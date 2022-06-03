@@ -1,0 +1,13 @@
+name: bd-farmacia
+title:
+username:
+account: mfjr
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6426363
+bundleId: 5976359
+url: https://mfjr.shinyapps.io/bd-farmacia/
+when: 1654295457.17139
+lastSyncTime: 1654295457.17139
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,0 +1,147 @@
+library(shiny)
+library(shinyjs)
+library(shinyauthr)
+library(shinydashboard)
+library(shinydashboardPlus)
+
+library(RODBC)
+library(DBI)
+
+ui <- dashboardPage(
+dashboardHeader(title = tags$div(icon("fa-solid fa-pills"),"Farmácias M&W"),
+                dropdownMenu(type = "messages",
+                             messageItem(
+                               from = "Support",
+                               message = tags$div("Call me if has a problem"),
+                               icon = icon("life-ring"),
+                               time = format(Sys.time(), "%a %b %d %X %Y"),
+                               href = "mailto:ferreira.jr.ufpb@gmail.com"
+                             )
+                ),
+                tags$li(a(href = 'https://github.com/Manuelfjr',
+                          icon("github"),
+                          title = "Github"),
+                        class = "dropdown"),
+                tags$li(a(href = 'https://sites.google.com/site/marceloiury/cursos/',
+                          img(src = "https://cdn-icons-png.flaticon.com/512/3161/3161158.png",#icon("fa-solid fa-database"),
+                              title = "Banco de Dados 01", height = "30px"),
+                          style = "padding-top:10px; padding-bottom:10px;"),
+                        class = "dropdown")),
+dashboardSidebar(
+  collapsed = F, 
+  div(htmlOutput("welcome"), style = "padding: 20px"),
+  sidebarMenu(
+    menuItem("View Tables", 
+             tabName = "view_table", icon = icon("search")),
+    menuItem("Create Tables", tabName = "create_table", icon = icon("plus-square")),
+    menuItem("Update Tables", tabName = "update_table", icon = icon("exchange-alt")),
+    menuItem("Insert Entries", tabName = "insert_value", icon = icon("edit")),
+    menuItem("Delete Tables", tabName = "del_table", icon = icon("trash-alt")),
+    menuItem("About US", tabName = "about", icon = icon("info-circle"))
+  )
+),
+dashboardBody(
+  tabItems(
+    tabItem(
+      # infoBoxes with fill=FALSE
+      fluidRow(
+        infoBoxOutput("totalestoque",widt=3),
+        infoBoxOutput("totalfilial",widt=3),
+        infoBoxOutput("totalfuncionario",widt=3),
+        infoBoxOutput("salariomedio",widt=3)
+      ),
+      
+      numericInput('num_input','Number of rows', value=12),
+      tabName = "view_table",
+      box(#title = h2("Base"),
+        uiOutput("tab1UI"),
+        id = "mybox",
+        collapsible = T,
+        closable = FALSE,
+        solidHeader = F,
+        width=7,
+        tableOutput("table1"),
+        status='primary'
+      )),
+    tabItem(tabName = "del_table",uiOutput("tab2UI")),
+    tabItem(tabName = "update_table", uiOutput("tab3UI")),
+    tabItem(tabName = "create_table", uiOutput("tab4UI")),
+    tabItem(tabName = "insert_value", uiOutput("tab5UI")),
+    tabItem(tabName = "about",
+            userBox(
+              title = userDescription(
+                title = tags$a(href="https://manuelfjr.github.io","Manuel Ferreira Junior",style="color:white"),
+                subtitle = tags$div("Jr. Data Scientist at ", tags$b(tags$a(href="https://www.semprocesso.com.br/", "Sem Processo"))),
+                type = 1,
+                image = "https://raw.githubusercontent.com/Manuelfjr/birt-gd/main/assets/author.jpg",
+                backgroundImage = "https://cdn.statically.io/img/wallpaperaccess.com/full/1119564.jpg"
+              ),
+              status = "primary",
+              footer = "I’m an undergraduate student in statistics at the Federal University of Paraiba (UFPB). I’m 82% statistic, I come from my second scientific initiation project, I have mastered the R, Python languages. Maybe I don’t know, but I’m going after that, slogan :), I like to program in my free time and learn new things, ah, it is worth mentioning that a coffee helps a lot."
+            ),
+            userBox(
+              title = userDescription(
+                tags$a(href="https://github.com/wanusapontes","Wanusa Pontes",style="color:white"),
+                subtitle = tags$div("Data Analyst at ", tags$b(tags$a(href="https://deal.com.br/", "DEAL"))),
+                type = 1,
+                image = "https://media-exp1.licdn.com/dms/image/C4E03AQFpwrSKCqAacw/profile-displayphoto-shrink_800_800/0/1623117087852?e=1659571200&v=beta&t=NWBaEZj5Tfyj70ADj_ajTaBlhN4PmmNCB1hT75J5Pxw",
+                backgroundImage = "https://cdn.statically.io/img/wallpaperaccess.com/full/1119564.jpg"
+              ),
+              status = "primary",
+              footer = tags$div(
+                tags$ul(
+                  tags$li("I’m currently working on Data Analysis and Data Science."), 
+                  tags$li("I’m currently learning Oracle, Machine Learning and Cloud Computer."), 
+                  tags$li("Pronouns: She/Her")
+                )
+              )
+            ),
+            uiOutput("tab6UI"))
+    )
+  )
+
+)
+
+
+
+
+server <- function(input, output, session) {
+output$tab1UI <- renderTable({
+  conn <- dbConnect(
+    drv = RMySQL::MySQL(),#plot
+    dbname = "shinydemo",
+    host = "shiny-demo.csa7qlmguqrf.us-east-1.rds.amazonaws.com",
+    username = "guest",
+    password = "guest")
+  on.exit(dbDisconnect(conn), add = TRUE)
+  dbGetQuery(conn, paste0(
+    "SELECT * FROM City LIMIT ", input$num_input, ";"))
+})
+
+output$totalestoque <- renderInfoBox({
+  infoBox(
+    "Estoque", 123456, icon = icon("list"),
+    color = "purple"
+  )
+})
+output$totalfilial <- renderInfoBox({
+  infoBox(
+    "Total de Filiais", 654, icon = icon("	glyphicon glyphicon-home", lib = "glyphicon"),
+    color = "fuchsia"
+  )
+})
+output$totalfuncionario <- renderInfoBox({
+  infoBox(
+    "Total de Funcionarios", 654, icon = icon("glyphicon glyphicon-user", lib = "glyphicon"),
+    color = "blue"
+  )
+})
+output$salariomedio <- renderInfoBox({
+  infoBox(
+    "Salário médio", paste0("R$"," ",4750.75), icon = icon("glyphicon glyphicon-usd", lib = "glyphicon"),
+    color = "green"
+  )
+})
+}
+
+shinyApp(ui, server)
