@@ -4,8 +4,41 @@ library(shinyauthr)
 library(shinydashboard)
 library(shinydashboardPlus)
 
-library(RODBC)
 library(DBI)
+library(RODBC)
+
+library(plyr)
+library(ggplot2)
+
+db <- 'postgres'  #provide the name of your db
+host_db <- "localhost" #i.e. # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'  
+db_port <- '5432'  # or any other port specified by the DBA
+db_user <- "postgres"  
+db_password <- "20180008601"
+
+tryCatch({
+  drv <- dbDriver("PostgreSQL")
+  print("Connecting to Database…")
+  connec <- dbConnect(RPostgres::Postgres(),
+                      dbname = db,
+                      host=host_db,
+                      port=db_port,
+                      user=db_user,
+                      password=db_password)
+  print("Database Connected!")
+},
+error=function(cond) {
+  print("Unable to connect to Database.")
+})
+
+num_func = dbGetQuery(connec, paste0("SELECT COUNT(id_func) FROM Funcionarios",";"))
+num_filial = dbGetQuery(connec, paste0("SELECT COUNT(id_filial) FROM Filial",";"))
+avg_salary = round(dbGetQuery(connec, paste0("SELECT AVG(salario) FROM Funcionarios",";")),2)
+
+counts_filial = dbGetQuery(connec, paste0("SELECT id_filial FROM Funcionarios",";"))
+names_func = dbGetQuery(connec, paste0("SELECT nome FROM Funcionarios",";"))
+columns_names = names(dbGetQuery(connec, paste0("SELECT * FROM Funcionarios",";")))
+
 
 ui <- dashboardPage(
 dashboardHeader(title = tags$div(icon("fa-solid fa-pills"),"Farmácias M&W"),
@@ -33,7 +66,7 @@ dashboardSidebar(
   sidebarMenu(
     menuItem("View Tables", 
              tabName = "view_table", icon = icon("search")),
-    menuItem("Create Tables", tabName = "create_table", icon = icon("plus-square")),
+    #menuItem("Create Tables", tabName = "create_table", icon = icon("plus-square")),
     menuItem("Update Tables", tabName = "update_table", icon = icon("exchange-alt")),
     menuItem("Insert Entries", tabName = "insert_value", icon = icon("edit")),
     menuItem("Delete Tables", tabName = "del_table", icon = icon("trash-alt")),
@@ -50,19 +83,91 @@ dashboardBody(
         infoBoxOutput("totalfuncionario",widt=3),
         infoBoxOutput("salariomedio",widt=3)
       ),
-      
-      numericInput('num_input','Number of rows', value=12),
+      fluidRow(
+        box(
+            title='Linhas',
+            id = "filter1",
+            collapsible = T,
+            closable = FALSE,
+            solidHeader = T,
+            width=3,
+            numericInput('num_input', '',value=100),
+            status='primary'
+          ),
+        box(
+          title='Colunas',
+          id = "filter5",
+          collapsible = T,
+          closable = FALSE,
+          solidHeader = T,
+          width=3,
+          selectInput(inputId = "columns_names",
+                      label = "",
+                      choice=c('Todas',counts_filial$id_filial),
+                      selected='Todas'),
+          status='primary'
+        ),
+        box(
+          title='Filial',
+          id = "filter2",
+          collapsible = T,
+          closable = FALSE,collapsed =T,
+          solidHeader = T,
+          width=3,
+          selectInput(inputId = "file_type",
+                      label = "",
+                      choice=c('Todas',counts_filial$id_filial),
+                      selected='Todas'),
+          status='primary'
+        ),
+        box(
+          title='Funcionário',
+          id = "filter3",
+          collapsible = T,
+          closable = FALSE,collapsed =T,
+          solidHeader = T,
+          width=3,
+          textInput('name_func', '',value="",placeholder="Todos"),
+          status='primary'
+        )
+      ),
       tabName = "view_table",
-      box(#title = h2("Base"),
-        uiOutput("tab1UI"),
-        id = "mybox",
-        collapsible = T,
-        closable = FALSE,
-        solidHeader = F,
-        width=7,
-        tableOutput("table1"),
-        status='primary'
-      )),
+      uiOutput("tab1UI"),
+      fluidRow(
+        #column(
+        box(
+          title="Tabela de Funcionários",
+          id = "mytable",
+          collapsible = T,
+            closable = FALSE,
+            solidHeader = T,
+            width=12,
+          DT::dataTableOutput("table1"),
+            status='primary'
+        ),
+        box(
+          title="Distribuição dos salários",
+          id = "myplot1",
+          collapsible = T,
+          closable = FALSE,collapsed =T,
+          solidHeader = T,
+          width=12,
+          plotOutput("plot1"),
+          status='primary'
+        )
+        #,width=12)
+      )
+      #box(#title = h2("Base"),
+      #  uiOutput("tab1UI"),
+      #  id = "mybox",
+      #  collapsible = T,
+      #  closable = FALSE,
+      #  solidHeader = F,
+      #  width=7,
+      #  tableOutput("table1"),
+      #  status='primary'
+      #)
+      ),
     tabItem(tabName = "del_table",uiOutput("tab2UI")),
     tabItem(tabName = "update_table", uiOutput("tab3UI")),
     tabItem(tabName = "create_table", uiOutput("tab4UI")),
@@ -106,17 +211,57 @@ dashboardBody(
 
 
 server <- function(input, output, session) {
-output$tab1UI <- renderTable({
-  conn <- dbConnect(
-    drv = RMySQL::MySQL(),#plot
-    dbname = "shinydemo",
-    host = "shiny-demo.csa7qlmguqrf.us-east-1.rds.amazonaws.com",
-    username = "guest",
-    password = "guest")
-  on.exit(dbDisconnect(conn), add = TRUE)
-  dbGetQuery(conn, paste0(
-    "SELECT * FROM City LIMIT ", input$num_input, ";"))
-})
+  dataInput <- reactive({
+    #dbGetQuery(connec, paste0(
+    #  "SELECT * FROM Funcionarios LIMIT ", input$num_input,";"))
+    print(c(input$file_type,input$columns_names,input$name_func))
+    if (input$file_type == "Todas" & input$columns_names == "Todas" & input$name_func==""){
+      print('TESTANDO')
+      dbGetQuery(connec, paste0(
+        "SELECT * FROM Funcionarios LIMIT ", input$num_input,";"))
+    }else{
+      if (input$file_type != "Todas" & input$columns_names == "Todas" & input$name_func==""){
+        dbGetQuery(connec, paste0(
+          "SELECT * FROM Funcionarios WHERE id_filial='",input$file_type,"' LIMIT ", input$num_input,";"))
+      }else{
+        if (input$file_type == "Todas" & input$columns_names != "Todas" & input$name_func==""){
+          dbGetQuery(connec, paste0(
+            "SELECT ",input$columns_names," FROM Funcionarios LIMIT ", input$num_input,";"))
+        }else{
+          if (input$file_type == "Todas" & input$columns_names == "Todas" & input$name_func!=""){
+            dbGetQuery(connec, paste0(
+              "SELECT * FROM Funcionarios WHERE nome='",input$name_func,"' LIMIT ", input$num_input,";"))
+          }else{
+            if (input$file_type == "Todas" & input$columns_names != "Todas" & input$name_func!=""){
+              dbGetQuery(connec, paste0(
+                "SELECT ",input$columns_names," FROM Funcionarios WHERE nome='",input$name_func,"' LIMIT ", input$num_input,";"))
+            }else{
+              if (input$file_type != "Todas" & input$columns_names == "Todas" & input$name_func!=""){
+                dbGetQuery(connec, paste0(
+                  "SELECT * FROM Funcionarios WHERE nome='",input$name_func,"' AND id_filial='",input$file_type,"' LIMIT ", input$num_input,";"))
+              }else{
+                if (input$file_type != "Todas" & input$columns_names != "Todas" & input$name_func==""){
+                  dbGetQuery(connec, paste0(
+                    "SELECT ",input$columns_names," FROM Funcionarios WHERE id_filial='",input$file_type,"' LIMIT ", input$num_input,";"))
+                }else{
+                  if (input$file_type != "Todas" & input$columns_names != "Todas" & input$name_func!=""){
+                    dbGetQuery(connec, paste0(
+                      "SELECT ",input$columns_names," FROM Funcionarios WHERE id_filial='",input$file_type,"' AND id_filial='",input$file_type,"' LIMIT ", input$num_input,";"))
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  columns_names
+output$table1 <- DT::renderDataTable({
+  db = dataInput()
+  db
+},options = list(scrollX = TRUE),escape = FALSE,server=F)
+
 
 output$totalestoque <- renderInfoBox({
   infoBox(
@@ -126,22 +271,51 @@ output$totalestoque <- renderInfoBox({
 })
 output$totalfilial <- renderInfoBox({
   infoBox(
-    "Total de Filiais", 654, icon = icon("	glyphicon glyphicon-home", lib = "glyphicon"),
+    "Filiais", num_filial, icon = icon("	glyphicon glyphicon-home", lib = "glyphicon"),
     color = "fuchsia"
   )
 })
 output$totalfuncionario <- renderInfoBox({
   infoBox(
-    "Total de Funcionarios", 654, icon = icon("glyphicon glyphicon-user", lib = "glyphicon"),
+    "Funcionarios", num_func, icon = icon("glyphicon glyphicon-user", lib = "glyphicon"),
     color = "blue"
   )
 })
 output$salariomedio <- renderInfoBox({
   infoBox(
-    "Salário médio", paste0("R$"," ",4750.75), icon = icon("glyphicon glyphicon-usd", lib = "glyphicon"),
+    "Salário médio", paste0("R$"," ",avg_salary), icon = icon("glyphicon glyphicon-usd", lib = "glyphicon"),
     color = "green"
   )
+})
+
+output$plot1 <- renderPlot({
+  db = dataInput()
+  print(db)
+  mu <- ddply(db, "sexo", summarise, grp.mean=mean(salario))
+  
+  # Add mean lines
+  p<-ggplot(db, aes(x=salario, color=sexo)) +
+    geom_histogram(fill="white", position="dodge")+
+    geom_vline(data=mu, aes(xintercept=grp.mean, color=sexo),
+               linetype="dashed")+
+    theme(legend.position="top")
+  p
 })
 }
 
 shinyApp(ui, server)
+
+
+#output$table1 <- renderTable({
+#  conn <- dbConnect(
+#    drv = RMySQL::MySQL(),#plot
+#    dbname = "shinydemo",
+#    host = "shiny-demo.csa7qlmguqrf.us-east-1.rds.amazonaws.com",
+#    username = "guest",
+#    password = "guest")
+#  on.exit(dbDisconnect(conn), add = TRUE)
+#  dbGetQuery(conn, paste0(
+#    "SELECT * FROM City LIMIT ", input$num_input, ";"))
+#})
+# uma interface grafica para uma das entidades para cadastros (tabela funcionarios, principio ativo, etc)
+# uma interface grafica para uma das consultas
