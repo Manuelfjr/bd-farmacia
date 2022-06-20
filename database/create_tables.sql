@@ -16,5 +16,6 @@ CREATE TABLE Funcionarios(
 	rua varchar(255),
 	numero int,
 	salario float NOT NULL DEFAULT 1218,
+	sexo varchar(255),
 	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial)
 );
