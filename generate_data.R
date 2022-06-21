@@ -2,6 +2,7 @@
 #install.packages('randomNames')
 library(maps)
 library(randomNames)
+library(DBI)
 
 data(world.cities)
 names(world.cities)
@@ -12,20 +13,20 @@ db_port <- '5432'  # or any other port specified by the DBA
 db_user <- "postgres"  
 db_password <- "20180008601"
 
-tryCatch({
-  drv <- dbDriver("PostgreSQL")
-  print("Connecting to Database…")
-  connec <- dbConnect(RPostgres::Postgres(),
+#tryCatch({
+drv <- dbDriver("PostgreSQL")
+print("Connecting to Database…")
+connec <- dbConnect(RPostgres::Postgres(),
                       dbname = db,
                       host=host_db,
                       port=db_port,
                       user=db_user,
                       password=db_password)
-  print("Database Connected!")
-},
-error=function(cond) {
-  print("Unable to connect to Database.")
-})
+print("Database Connected!")
+#},
+#error=function(cond) {
+#  print("Unable to connect to Database.")
+#})
 
 
 # Generate filial datas ##############

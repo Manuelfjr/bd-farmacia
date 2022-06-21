@@ -38,7 +38,7 @@ avg_salary = round(dbGetQuery(connec, paste0("SELECT AVG(salario) FROM Funcionar
 counts_filial = dbGetQuery(connec, paste0("SELECT id_filial FROM Funcionarios",";"))
 names_func = dbGetQuery(connec, paste0("SELECT nome FROM Funcionarios",";"))
 columns_names = names(dbGetQuery(connec, paste0("SELECT * FROM Funcionarios",";")))
-
+names(dbGetQuery(connec, paste0("SELECT * FROM Filial",";")))
 
 ui <- dashboardPage(
 dashboardHeader(title = tags$div(icon("fa-solid fa-pills"),"Farmácias M&W"),
