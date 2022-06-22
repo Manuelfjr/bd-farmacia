@@ -136,3 +136,4 @@ query = paste0(
   #"VALUES (1, 'cristo', '58070403', 'jose borges', 68, 'jp', 'manel');"
 )
 head(dbGetQuery(connec, query))
+

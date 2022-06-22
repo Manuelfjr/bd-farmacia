@@ -33,9 +33,9 @@ CREATE TABLE Remedios(
     PRIMARY KEY (id_remedio)
 );
 
---INSERT INTO Remedios VALUES (1,'TesteDip','Dipi','Sim',2.5, 5.4, 'N„o', 'WForne');
---INSERT INTO Remedios VALUES (2, 'TesteAzi','Azi','Sim',4, 6.7, 'N„o', 'WForne');
---INSERT INTO Remedios VALUES (3, 'Teste2Dip','Azi','Sim',5, 10, 'N„o', 'WForne');
+--INSERT INTO Remedios VALUES (1,'TesteDip','Dipi','Sim',2.5, 5.4, 'N√£o', 'WForne');
+--INSERT INTO Remedios VALUES (2, 'TesteAzi','Azi','Sim',4, 6.7, 'N√£o', 'WForne');
+--INSERT INTO Remedios VALUES (3, 'Teste2Dip','Azi','Sim',5, 10, 'N√£o', 'WForne');
 
 
 CREATE TABLE Promocao(
@@ -52,6 +52,34 @@ CREATE TABLE Estoque(
     qtd_remedio INT NOT NULL
 );
 
+CREATE TABLE Venda(
+	id_venda INT NOT NULL PRIMARY KEY,
+	id_nf INT NOT NULL,
+	id_remedio INT NOT NULL,
+	data_fim DATE NOT NULL,
+	valor_total float NOT NULL,
+	qtd_item INT NOT NULL,
+	FOREIGN KEY (id_remedio) REFERENCES Remedios(id_remedio)
+);
+
+CREATE TABLE Nf(
+	id_nf INT NOT NULL PRIMARY KEY,
+	id_vendedor INT NOT NULL,
+	id_filial INT NOT NULL,
+	valor_total FLOAT NOT NULL,
+	qtd_remedios INT NOT NULL,
+	data_nf DATE NOT NULL,
+	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial),
+	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
+);
+
+CREATE TABLE Comissao(
+	id_comissao INT NOT NULL PRIMARY KEY,
+	id_vendedor INT NOT NULL,
+	comissao float NOT NULL,
+	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
+);
+
 --INSERT INTO Estoque VALUES ( 1, 1, 8);
 --INSERT INTO Estoque VALUES ( 1, 2, 10);
 
@@ -59,7 +87,7 @@ CREATE TABLE Estoque(
 
 -------------------------------------
 --TRIGGER E PROCEDURE ATUALIZA ESTOQUE E PEDE PARA CADASTRAR
---O REMEDIO QUE AINDA N√O CONSTA NO ESTOQUE
+--O REMEDIO QUE AINDA N√ÉO CONSTA NO ESTOQUE
 -------------------------------------
 
 
