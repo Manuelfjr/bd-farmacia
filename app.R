@@ -15,7 +15,7 @@ host_db <- "localhost" #i.e. # i.e. 'ec2-54-83-201-96.compute-1.amazonaws.com'
 db_port <- '5432'  # or any other port specified by the DBA
 db_user <- "postgres"  
 db_password <- "20180008601"
-
+#Consultas
 #tryCatch({
 drv <- dbDriver("PostgreSQL")
 print("Connecting to Database…")
@@ -70,7 +70,7 @@ dashboardSidebar(
     menuItem("Update", tabName = "update_table", icon = icon("exchange-alt")),
     menuItem("Insert", tabName = "insert_value", icon = icon("edit")),
     menuItem("Delete", tabName = "del_table", icon = icon("trash-alt")),
-    menuItem("Consultas", tabName = "del_table", icon = icon("file-import")),
+    #menuItem("Consultas", tabName = "del_table", icon = icon("file-import")),
     menuItem("Sobre nós", tabName = "about", icon = icon("info-circle"))#glyphicon glyphicon-save
   )
 ),
@@ -92,7 +92,7 @@ dashboardBody(
             closable = FALSE,
             solidHeader = T,
             width=3,
-            numericInput('num_input', '',value=num_func$count),
+            numericInput('num_input', '',value=1000),
             status='primary'
           ),
         box(
@@ -462,7 +462,7 @@ server <- function(input, output, session) {
       }
     }
   })
-  columns_names
+  
 output$table1 <- DT::renderDataTable({
   db = dataInput()
   db
@@ -471,7 +471,7 @@ output$table1 <- DT::renderDataTable({
 
 output$totalestoque <- renderInfoBox({
   infoBox(
-    "Estoque", 123456, icon = icon("list"),
+    "Estoque", 1250, icon = icon("list"),
     color = "purple"
   )
 })
@@ -527,7 +527,7 @@ insert <- function(query){
     sep=", ")
   query = paste("INSERT INTO Funcionarios (id_func, id_filial, nome, cep, rua, numero, salario, sexo) ",
                 "VALUES (", a,");",sep='')
-  #print(query)
+  print(query)
   #print(insert)
   dbGetQuery(connec, query)
 }

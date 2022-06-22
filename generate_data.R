@@ -100,12 +100,12 @@ for(i in 1:(m)){
 rua = sample(world.cities$name, size=m)
 numero = sample(0:m, size=m)
 salario = round(rnorm(m, mean=2750, sd = 1000),2)
-sexo = sample(c('homem','mulher','outros'), size=m,replace=T)
+sexo = sample(c('masculino','feminino','outros'), size=m,replace=T)
 
 query = paste0(
   #"SELECT * FROM Filial;"
   "INSERT INTO Funcionarios ",
-  "VALUES (",id_func[1],", ",id_filial[1],", 'manuel', '58070403', 'jose borges', 68, 4500,'homem');"
+  "VALUES (",id_func[1],", ",id_filial[1],", 'manuel', '58070403', 'jose borges', 68, 4500,'masculino');"
 )
 dbGetQuery(connec, query)
 

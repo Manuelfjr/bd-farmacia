@@ -89,14 +89,6 @@ CREATE TABLE Comissao(
 --TRIGGER E PROCEDURE ATUALIZA ESTOQUE E PEDE PARA CADASTRAR
 --O REMEDIO QUE AINDA NÃO CONSTA NO ESTOQUE
 -------------------------------------
-
-
-CREATE TRIGGER t_atualiza_estoque
-BEFORE INSERT ON Estoque
-FOR EACH ROW
-EXECUTE PROCEDURE atualiza_estoque();
-
-
 CREATE OR REPLACE FUNCTION atualiza_estoque() RETURNS TRIGGER
 AS 
 $$
@@ -116,6 +108,12 @@ BEGIN
 	return NEW;
 END
 $$ LANGUAGE plpgsql;
+
+
+CREATE TRIGGER t_atualiza_estoque
+BEFORE INSERT ON Estoque
+FOR EACH ROW
+EXECUTE PROCEDURE atualiza_estoque();
 
 
 CREATE OR REPLACE FUNCTION atualiza_estoque_TESTE() RETURNS TRIGGER
@@ -183,14 +181,6 @@ FOR EACH ROW
 WHEN (pg_trigger_depth() = 0) 
 EXECUTE PROCEDURE valor_promocao();
 
-
-CREATE TRIGGER t_promocao_valor_TESTE
-BEFORE INSERT ON Promocao
-FOR EACH ROW
-WHEN (pg_trigger_depth() = 0) 
-EXECUTE PROCEDURE valor_promocao_TESTE();
-
-
 CREATE OR REPLACE FUNCTION valor_promocao_TESTE() RETURNS TRIGGER
 AS 
 $$
@@ -207,6 +197,13 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER t_promocao_valor_TESTE
+BEFORE INSERT ON Promocao
+FOR EACH ROW
+WHEN (pg_trigger_depth() = 0) 
+EXECUTE PROCEDURE valor_promocao_TESTE();
+
+
 --INSERT INTO Promocao VALUES (1, 3, 'Azi', 8.0);
 --INSERT INTO Promocao VALUES (2, 1, 'Dipi', 5);
 --DELETE FROM Promocao where id_remedio = 2
@@ -215,7 +212,7 @@ $$ LANGUAGE plpgsql;
 
 
 
-
+--SELECT * FROM Estoque LIMIT 10
 
 
 
