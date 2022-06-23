@@ -1,24 +1,3 @@
-CREATE TABLE Filial(
-	id_filial int NOT NULL PRIMARY KEY,
-	endereco varchar NOT NULL,
-	cep varchar(8) NOT NULL,
-	rua varchar(255),
-	numero int,
-	cidade varchar(255),
-	nome varchar(255)
-);
-
-CREATE TABLE Funcionarios(
-	id_func int NOT NULL PRIMARY KEY,
-	id_filial int NOT NULL,/*FOREIGN KEY REFERENCES Filial(id_filial),*/
-	nome varchar(255) NOT NULL,
-	cep varchar(8),
-	rua varchar(255),
-	numero int,
-	salario float NOT NULL DEFAULT 1218,
-	sexo varchar(255),
-	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial)
-);
 
 
 CREATE TABLE Remedios(
@@ -33,62 +12,60 @@ CREATE TABLE Remedios(
     PRIMARY KEY (id_remedio)
 );
 
---INSERT INTO Remedios VALUES (1,'TesteDip','Dipi','Sim',2.5, 5.4, 'Não', 'WForne');
---INSERT INTO Remedios VALUES (2, 'TesteAzi','Azi','Sim',4, 6.7, 'Não', 'WForne');
---INSERT INTO Remedios VALUES (3, 'Teste2Dip','Azi','Sim',5, 10, 'Não', 'WForne');
-
+INSERT INTO Remedios VALUES (1,'TesteDip','Dipi','Sim',2.5, 5.4, 'Não', 'WForne');
+INSERT INTO Remedios VALUES (2, 'TesteAzi','Azi','Sim',4, 6.7, 'Não', 'WForne');
+INSERT INTO Remedios VALUES (3, 'Teste2Dip','Azi','Sim',5, 10, 'Não', 'WForne');
+select * from Remedios
 
 CREATE TABLE Promocao(
     id_promocao int not null,
     id_remedio int not null,
     principio_ativo varchar(50) not null,
-    valor_promocional float not null
-    --PRIMARY KEY (id_promocao)
+    valor_promocional float not null,
+    PRIMARY KEY (id_promocao),
+    CONSTRAINT fk_Remedios
+      FOREIGN KEY(id_remedio) 
+	  REFERENCES Remedios(id_remedio)
 );
+
+CREATE TABLE Filial(
+	id_filial int NOT NULL PRIMARY KEY,
+	endereco varchar NOT NULL,
+	cep varchar(8) NOT NULL,
+	rua varchar(255),
+	numero int,
+	cidade varchar(255),
+	nome varchar(255)
+);
+
+INSERT INTO Filial VALUES ( 1, 'Centro', '115236', 'Rua 1', 45, 'Camus', 'DrograMais');
+INSERT INTO Filial VALUES ( 2, 'Centro', '005624', 'Rua 2', 489, 'Timba', 'DrograMais');
+
 
 CREATE TABLE Estoque(
     id_filial INT NOT NULL,
     id_remedio INT NOT NULL,
-    qtd_remedio INT NOT NULL
+    qtd_remedio INT NOT NULL,
+    CONSTRAINT fk_Remedios_Estoque
+      FOREIGN KEY(id_remedio) 
+	  REFERENCES Remedios(id_remedio),
+    CONSTRAINT fk_Filial_Estoque
+      FOREIGN KEY(id_filial) 
+	  REFERENCES Filial(id_filial)
 );
 
-CREATE TABLE Venda(
-	id_venda INT NOT NULL PRIMARY KEY,
-	id_nf INT NOT NULL,
-	id_remedio INT NOT NULL,
-	data_fim DATE NOT NULL,
-	valor_total float NOT NULL,
-	qtd_item INT NOT NULL,
-	FOREIGN KEY (id_remedio) REFERENCES Remedios(id_remedio)
-);
 
-CREATE TABLE Nf(
-	id_nf INT NOT NULL PRIMARY KEY,
-	id_vendedor INT NOT NULL,
-	id_filial INT NOT NULL,
-	valor_total FLOAT NOT NULL,
-	qtd_remedios INT NOT NULL,
-	data_nf DATE NOT NULL,
-	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial),
-	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
-);
 
-CREATE TABLE Comissao(
-	id_comissao INT NOT NULL PRIMARY KEY,
-	id_vendedor INT NOT NULL,
-	comissao float NOT NULL,
-	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
-);
+INSERT INTO Estoque VALUES ( 1, 1, 8);
+INSERT INTO Estoque VALUES ( 1, 2, 10);
 
---INSERT INTO Estoque VALUES ( 1, 1, 8);
---INSERT INTO Estoque VALUES ( 1, 2, 10);
-
---select * from Estoque
+select * from Estoque
 
 -------------------------------------
 --TRIGGER E PROCEDURE ATUALIZA ESTOQUE E PEDE PARA CADASTRAR
 --O REMEDIO QUE AINDA NÃO CONSTA NO ESTOQUE
 -------------------------------------
+
 CREATE OR REPLACE FUNCTION atualiza_estoque() RETURNS TRIGGER
 AS 
 $$
@@ -116,7 +93,7 @@ FOR EACH ROW
 EXECUTE PROCEDURE atualiza_estoque();
 
 
-CREATE OR REPLACE FUNCTION atualiza_estoque_TESTE() RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION atualiza_estoque_delete() RETURNS TRIGGER
 AS 
 $$
 BEGIN
@@ -128,14 +105,15 @@ END
 $$ LANGUAGE plpgsql;
 
 
-CREATE TRIGGER t_atualiza_estoque_TESTE
+CREATE TRIGGER t_atualiza_estoque_delete
 AFTER INSERT ON Estoque
 FOR EACH ROW
-EXECUTE PROCEDURE atualiza_estoque_TESTE();
+EXECUTE PROCEDURE atualiza_estoque_delete();
 
---INSERT INTO Estoque VALUES ( 1, 1, 3);
---DELETE FROM Estoque where qtd_remedio = 3
---SELECT * FROM Estoque
+INSERT INTO Estoque VALUES ( 1, 5, 3);
+INSERT INTO Estoque VALUES ( 1, 2, 3);
+DELETE FROM Estoque where qtd_remedio = 3
+SELECT * FROM Estoque
 
 
 ---------------------------------
@@ -147,9 +125,7 @@ select *
 from Estoque 
 where qtd_remedio <= 8;
     
---select * from View_Estoque_Minimo;
-
-
+select * from View_Estoque_Minimo;
 
 
 
@@ -157,6 +133,7 @@ where qtd_remedio <= 8;
 --PROMOCAO
 -------------------
 
+select * from Promocao;
 
 CREATE OR REPLACE FUNCTION valor_promocao() RETURNS TRIGGER
 AS 
@@ -181,7 +158,8 @@ FOR EACH ROW
 WHEN (pg_trigger_depth() = 0) 
 EXECUTE PROCEDURE valor_promocao();
 
-CREATE OR REPLACE FUNCTION valor_promocao_TESTE() RETURNS TRIGGER
+
+CREATE OR REPLACE FUNCTION promocao_principio_ativo() RETURNS TRIGGER
 AS 
 $$
 declare 
@@ -197,22 +175,73 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER t_promocao_valor_TESTE
+CREATE TRIGGER t_promocao_principio_ativo
 BEFORE INSERT ON Promocao
 FOR EACH ROW
 WHEN (pg_trigger_depth() = 0) 
-EXECUTE PROCEDURE valor_promocao_TESTE();
+EXECUTE PROCEDURE promocao_principio_ativo();
 
 
---INSERT INTO Promocao VALUES (1, 3, 'Azi', 8.0);
---INSERT INTO Promocao VALUES (2, 1, 'Dipi', 5);
---DELETE FROM Promocao where id_remedio = 2
---select * from Promocao
---select * from Remedios
+INSERT INTO Promocao VALUES (1, 2, 'Azi', 4);
+INSERT INTO Promocao VALUES (1, 2, 'Azi', 6);
+INSERT INTO Promocao VALUES (2, 3, 'Azi', 9);
+DELETE FROM Promocao where id_remedio = 1
+select * from Promocao
+select * from Remedios
 
 
 
---SELECT * FROM Estoque LIMIT 10
+
+----------------------------------------------
+--DEMAIS CREATES
+-------------------------------------------
+
+
+
+CREATE TABLE Venda(
+	id_venda INT NOT NULL PRIMARY KEY,
+	id_nf INT NOT NULL,
+	id_remedio INT NOT NULL,
+	data_fim DATE NOT NULL,
+	valor_total float NOT NULL,
+	qtd_item INT NOT NULL,
+	FOREIGN KEY (id_remedio) REFERENCES Remedios(id_remedio)
+);
+
+CREATE TABLE Funcionarios(
+	id_func int NOT NULL PRIMARY KEY,
+	id_filial int NOT NULL,/*FOREIGN KEY REFERENCES Filial(id_filial),*/
+	nome varchar(255) NOT NULL,
+	cep varchar(8),
+	rua varchar(255),
+	numero int,
+	salario float NOT NULL DEFAULT 1218,
+	sexo varchar(255),
+	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial)
+);
+
+CREATE TABLE Nf(
+	id_nf INT NOT NULL PRIMARY KEY,
+	id_vendedor INT NOT NULL,
+	id_filial INT NOT NULL,
+	valor_total FLOAT NOT NULL,
+	qtd_remedios INT NOT NULL,
+	data_nf DATE NOT NULL,
+	FOREIGN KEY (id_filial) REFERENCES Filial(id_filial),
+	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
+);
+
+
+CREATE TABLE Comissao(
+	id_comissao INT NOT NULL PRIMARY KEY,
+	id_vendedor INT NOT NULL,
+	comissao float NOT NULL,
+	FOREIGN KEY (id_vendedor) REFERENCES Funcionarios(id_func)
+);
+
+
+
+
 
 
 
